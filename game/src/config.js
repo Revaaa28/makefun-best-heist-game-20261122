@@ -86,6 +86,25 @@ export const GALLERIES = [
       { x: 740, y: 92, w: 120, h: 26, kind: 'bench' },
       { x: 560, y: 640, w: 160, h: 26, kind: 'bench' },
     ],
+    // Pure dressing, drawn only: planters, stanchion rope runs in front of the
+    // cases, empty plinths and one floor medallion. None of it blocks sight or
+    // movement — the wardens' world is unchanged.
+    decor: {
+      plants: [{ x: 102, y: 118 }, { x: 1152, y: 118 }, { x: 1152, y: 652 }],
+      ropes: [
+        { x1: 255, x2: 375, y: 290 },
+        { x1: 905, x2: 1025, y: 290 },
+        { x1: 465, x2: 575, y: 434 },
+        { x1: 705, x2: 815, y: 434 },
+      ],
+      plinths: [
+        { x: 400, y: 285, w: 34, h: 34 },
+        { x: 838, y: 285, w: 34, h: 34 },
+        { x: 253, y: 455, w: 30, h: 30 },
+        { x: 997, y: 455, w: 30, h: 30 },
+      ],
+      medallion: { x: 330, y: 360, r: 42 },
+    },
     loot: [
       { id: 'idol', name: 'The Sunbird Idol', value: 1000, prime: true, x: 640, y: 302 },
       { id: 'astrolabe', name: 'Astrolabe', value: 400, prime: false, x: 315, y: 292 },
@@ -125,6 +144,19 @@ export const GALLERIES = [
       { x: 740, y: 92, w: 120, h: 26, kind: 'bench' },
       { x: 560, y: 660, w: 160, h: 26, kind: 'bench' },
     ],
+    decor: {
+      plants: [{ x: 102, y: 118 }, { x: 1152, y: 118 }, { x: 102, y: 652 }],
+      ropes: [
+        { x1: 272, x2: 388, y: 284 },
+        { x1: 892, x2: 1008, y: 284 },
+        { x1: 632, x2: 732, y: 178 },
+      ],
+      plinths: [
+        { x: 165, y: 315, w: 30, h: 30 },
+        { x: 623, y: 528, w: 34, h: 34 },
+      ],
+      medallion: { x: 185, y: 460, r: 28 },
+    },
     loot: [
       { id: 'orrery', name: 'The Brass Orrery', value: 1200, prime: true, x: 640, y: 292 },
       { id: 'gears', name: 'Silver Gear Train', value: 450, prime: false, x: 330, y: 302 },
@@ -164,6 +196,17 @@ export const GALLERIES = [
       { x: 740, y: 92, w: 120, h: 26, kind: 'bench' },
       { x: 560, y: 640, w: 160, h: 26, kind: 'bench' },
     ],
+    decor: {
+      plants: [{ x: 300, y: 128 }, { x: 980, y: 128 }, { x: 1152, y: 652 }, { x: 102, y: 652 }],
+      ropes: [
+        { x1: 295, x2: 425, y: 364 },
+        { x1: 855, x2: 985, y: 364 },
+        { x1: 475, x2: 575, y: 542 },
+        { x1: 705, x2: 805, y: 542 },
+      ],
+      plinths: [{ x: 405, y: 585, w: 30, h: 30 }],
+      medallion: { x: 640, y: 415, r: 36 },
+    },
     loot: [
       { id: 'codex', name: 'The Illuminated Codex', value: 1500, prime: true, x: 640, y: 302 },
       { id: 'draft', name: "Poet's First Draft", value: 500, prime: false, x: 360, y: 382 },

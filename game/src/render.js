@@ -18,10 +18,14 @@ export const SCREEN_CAUGHT = 'caught';
 export const SCREEN_GETAWAY = 'getaway';
 
 const CARPET_COLORS = {
-  crimson: { fill: '#5d1f26', edge: '#c9a24a', stitch: '#d8b25e' },
-  emerald: { fill: '#1e4d38', edge: '#c9a24a', stitch: '#d8b25e' },
-  navy: { fill: '#22335c', edge: '#c9a24a', stitch: '#d8b25e' },
+  crimson: { fill: '#7c2934', edge: '#c9a24a', stitch: '#d8b25e' },
+  emerald: { fill: '#256b4a', edge: '#c9a24a', stitch: '#d8b25e' },
+  navy: { fill: '#2e4476', edge: '#c9a24a', stitch: '#d8b25e' },
 };
+
+// Actors are painted larger than their collision circles: at screenshot
+// scale a 26 px figure vanishes, so Wren and the wardens draw at 1.5×.
+const ACTOR_SCALE = 1.5;
 
 const LOOT_ICONS = {
   idol: 'idol', astrolabe: 'astrolabe', chess: 'chess',
@@ -72,13 +76,13 @@ function makeFloorTexture(def) {
 
   const floor = { x: ROOM.x, y: ROOM.y, w: ROOM.w, h: ROOM.h };
   if (def.floor === 'marble') {
-    ctx.fillStyle = '#3c414e';
+    ctx.fillStyle = '#4d5464';
     ctx.fillRect(floor.x, floor.y, floor.w, floor.h);
     // Large marble tiles with soft tonal shifts.
     for (let ty = 0; ty < 4; ty += 1) {
       for (let tx = 0; tx < 8; tx += 1) {
         const shade = 0.95 + random() * 0.25;
-        ctx.fillStyle = `rgb(${Math.floor(60 * shade)},${Math.floor(65 * shade)},${Math.floor(78 * shade)})`;
+        ctx.fillStyle = `rgb(${Math.floor(86 * shade)},${Math.floor(92 * shade)},${Math.floor(108 * shade)})`;
         ctx.fillRect(floor.x + tx * 153, floor.y + ty * 163, 153, 163);
       }
     }
@@ -98,7 +102,7 @@ function makeFloorTexture(def) {
       ctx.stroke();
     }
     // Tile seams.
-    ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.20)';
     ctx.lineWidth = 1;
     for (let tx = 1; tx < 8; tx += 1) {
       ctx.beginPath(); ctx.moveTo(floor.x + tx * 153, floor.y); ctx.lineTo(floor.x + tx * 153, floor.y + floor.h); ctx.stroke();
@@ -107,13 +111,13 @@ function makeFloorTexture(def) {
       ctx.beginPath(); ctx.moveTo(floor.x, floor.y + ty * 163); ctx.lineTo(floor.x + floor.w, floor.y + ty * 163); ctx.stroke();
     }
   } else if (def.floor === 'wood') {
-    ctx.fillStyle = '#4a3421';
+    ctx.fillStyle = '#5d4128';
     ctx.fillRect(floor.x, floor.y, floor.w, floor.h);
     // Planks with grain: alternating tones, seams and grain strokes.
     const plankH = 46;
     for (let row = 0; row * plankH < floor.h; row += 1) {
       const shade = 0.85 + random() * 0.35;
-      ctx.fillStyle = `rgb(${Math.floor(96 * shade)},${Math.floor(68 * shade)},${Math.floor(40 * shade)})`;
+      ctx.fillStyle = `rgb(${Math.floor(126 * shade)},${Math.floor(90 * shade)},${Math.floor(54 * shade)})`;
       ctx.fillRect(floor.x, floor.y + row * plankH, floor.w, plankH);
       ctx.strokeStyle = 'rgba(0,0,0,0.35)';
       ctx.lineWidth = 1.5;
@@ -151,7 +155,7 @@ function makeFloorTexture(def) {
     }
   } else {
     // Bevelled stone: large flags with lit top edges and dark bottoms.
-    ctx.fillStyle = '#3b3a36';
+    ctx.fillStyle = '#4c4a44';
     ctx.fillRect(floor.x, floor.y, floor.w, floor.h);
     const tile = 122;
     for (let ty = 0; ty * tile < floor.h; ty += 1) {
@@ -159,7 +163,7 @@ function makeFloorTexture(def) {
         const shade = 0.88 + random() * 0.24;
         const x = floor.x + tx * tile;
         const y = floor.y + ty * tile;
-        ctx.fillStyle = `rgb(${Math.floor(66 * shade)},${Math.floor(63 * shade)},${Math.floor(56 * shade)})`;
+        ctx.fillStyle = `rgb(${Math.floor(92 * shade)},${Math.floor(88 * shade)},${Math.floor(78 * shade)})`;
         ctx.fillRect(x + 2, y + 2, tile - 4, tile - 4);
         ctx.fillStyle = 'rgba(255,255,255,0.10)';
         ctx.fillRect(x + 2, y + 2, tile - 4, 3);
@@ -176,13 +180,13 @@ function makeFloorTexture(def) {
 
   // Warm lamplight pools and a cool vignette so the room reads at a glance.
   const warm = ctx.createRadialGradient(640, 330, 60, 640, 330, 620);
-  warm.addColorStop(0, 'rgba(255,196,110,0.10)');
+  warm.addColorStop(0, 'rgba(255,196,110,0.16)');
   warm.addColorStop(1, 'rgba(255,196,110,0)');
   ctx.fillStyle = warm;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   const vignette = ctx.createRadialGradient(640, 380, 260, 640, 380, 760);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,0.34)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.20)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   return canvas;
@@ -200,7 +204,7 @@ export function createRenderer(canvas) {
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(ROOM.x + 5, ROOM.y + 7, ROOM.w, ROOM.h);
     // Wall body: a thick border around the room, with a gap for each door.
-    ctx.fillStyle = '#232733';
+    ctx.fillStyle = '#303747';
     const gaps = [
       { x: ENTRY.x - 38, y: ROOM.y + ROOM.h - WALL, w: 76, h: WALL }, // service door (south)
       { x: ROOM.x + ROOM.w - WALL, y: EXIT.y - 48, w: WALL, h: 96 }, // exit (east)
@@ -211,7 +215,7 @@ export function createRenderer(canvas) {
     ctx.fillRect(ROOM.x + ROOM.w, ROOM.y, WALL, ROOM.h); // east, minus gap
     // Cut the door gaps back to floor colour.
     for (const gap of gaps) {
-      ctx.fillStyle = '#2a2e3c';
+      ctx.fillStyle = '#39415a';
       ctx.fillRect(gap.x, gap.y, gap.w, gap.h);
     }
     // Lit top cap along the inner edge, and a gold picture rail on the north wall.
@@ -282,7 +286,7 @@ export function createRenderer(canvas) {
     ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
     ctx.lineWidth = 1;
     ctx.strokeRect(zone.x + 5, zone.y + 5, zone.w - 10, zone.h - 10);
-    ctx.fillStyle = 'rgba(8,10,24,0.42)';
+    ctx.fillStyle = 'rgba(8,10,24,0.36)';
     ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
     text(ctx, zone.label, zone.x + zone.w / 2, zone.y + 16, 'bold 11px Georgia, serif', 'rgba(170,190,255,0.85)', 'center');
     text(ctx, 'watcher reach halved', zone.x + zone.w / 2, zone.y + 32, '10px Georgia, serif', 'rgba(170,190,255,0.6)', 'center');
@@ -335,12 +339,12 @@ export function createRenderer(canvas) {
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.fillRect(piece.x + 4, piece.y + 5, piece.w, piece.h);
       if (piece.kind === 'case') {
-        ctx.fillStyle = '#171a24';
+        ctx.fillStyle = '#252b3d';
         ctx.fillRect(piece.x, piece.y, piece.w, piece.h);
-        ctx.fillStyle = '#2c3345';
+        ctx.fillStyle = '#414c66';
         ctx.fillRect(piece.x + 4, piece.y + 4, piece.w - 8, piece.h - 8);
         // Glass top with a lit rim and a glint.
-        ctx.fillStyle = 'rgba(150,190,230,0.20)';
+        ctx.fillStyle = 'rgba(160,200,240,0.30)';
         ctx.fillRect(piece.x + 6, piece.y + 6, piece.w - 12, piece.h - 12);
         ctx.strokeStyle = 'rgba(255,214,140,0.8)';
         ctx.lineWidth = 2;
@@ -349,24 +353,24 @@ export function createRenderer(canvas) {
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(piece.x + 10, piece.y + piece.h - 10); ctx.lineTo(piece.x + piece.w / 2, piece.y + 8); ctx.stroke();
       } else if (piece.kind === 'pillar') {
-        ctx.fillStyle = '#3d3a33';
+        ctx.fillStyle = '#50493c';
         ctx.beginPath(); ctx.arc(piece.x + piece.w / 2, piece.y + piece.h / 2, piece.w / 2, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#57503f';
+        ctx.fillStyle = '#6e6350';
         ctx.beginPath(); ctx.arc(piece.x + piece.w / 2 - 3, piece.y + piece.h / 2 - 3, piece.w / 2 - 5, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = 'rgba(255,214,140,0.6)';
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(piece.x + piece.w / 2, piece.y + piece.h / 2, piece.w / 2 - 2, 0, Math.PI * 2); ctx.stroke();
       } else if (piece.kind === 'statue') {
         // The rotunda plinth: stepped stone with a gold rim.
-        ctx.fillStyle = '#4a4238';
-        ctx.fillRect(piece.x, piece.y, piece.w, piece.h);
         ctx.fillStyle = '#5d5344';
+        ctx.fillRect(piece.x, piece.y, piece.w, piece.h);
+        ctx.fillStyle = '#71634e';
         ctx.fillRect(piece.x + 5, piece.y + 5, piece.w - 10, piece.h - 10);
         ctx.strokeStyle = 'rgba(201,162,74,0.9)';
         ctx.lineWidth = 2;
         ctx.strokeRect(piece.x + 2, piece.y + 2, piece.w - 4, piece.h - 4);
       } else if (piece.kind === 'shelf') {
-        ctx.fillStyle = '#2c2118';
+        ctx.fillStyle = '#40301f';
         ctx.fillRect(piece.x, piece.y, piece.w, piece.h);
         // Book spines in rows.
         const colors = ['#7a3b2e', '#2e5d4a', '#31456b', '#6b5a2e', '#5d2e4a'];
@@ -386,9 +390,9 @@ export function createRenderer(canvas) {
         ctx.lineWidth = 1.5;
         ctx.strokeRect(piece.x + 1, piece.y + 1, piece.w - 2, piece.h - 2);
       } else if (piece.kind === 'desk') {
-        ctx.fillStyle = '#3a2a18';
+        ctx.fillStyle = '#4e3820';
         ctx.fillRect(piece.x, piece.y, piece.w, piece.h);
-        ctx.fillStyle = '#54401f';
+        ctx.fillStyle = '#6f522c';
         ctx.fillRect(piece.x + 4, piece.y + 4, piece.w - 8, piece.h - 8);
         ctx.strokeStyle = 'rgba(255,214,140,0.6)';
         ctx.lineWidth = 1.5;
@@ -397,13 +401,96 @@ export function createRenderer(canvas) {
         ctx.strokeStyle = 'rgba(0,0,0,0.4)';
         ctx.beginPath(); ctx.moveTo(piece.x + piece.w / 2, piece.y + 4); ctx.lineTo(piece.x + piece.w / 2, piece.y + piece.h - 4); ctx.stroke();
       } else if (piece.kind === 'bench') {
-        ctx.fillStyle = '#4a2f1d';
+        ctx.fillStyle = '#634226';
         ctx.fillRect(piece.x, piece.y, piece.w, piece.h);
-        ctx.fillStyle = '#6b4526';
+        ctx.fillStyle = '#8a5f31';
         ctx.fillRect(piece.x + 3, piece.y + 3, piece.w - 6, piece.h - 6);
         ctx.strokeStyle = 'rgba(255,214,140,0.5)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(piece.x + 1, piece.y + 1, piece.w - 2, piece.h - 2);
+      }
+    }
+  }
+
+  // Dressing from the gallery's decor list: a gold floor medallion, empty
+  // plinths waiting for their next treasure, leafy planters in the corners and
+  // stanchion ropes sagging in front of the cases. Pure paint — the simulation
+  // never sees any of it, so sight-lines and patrols are untouched.
+  function drawDecor(def) {
+    const decor = def.decor;
+    if (!decor) return;
+    if (decor.medallion) {
+      const { x, y, r } = decor.medallion;
+      ctx.strokeStyle = 'rgba(201,162,74,0.4)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y, r * 0.68, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(201,162,74,0.4)';
+      for (let t = 0; t < 8; t += 1) {
+        const a = (t / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * r * 0.68, y + Math.sin(a) * r * 0.68);
+        ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(201,162,74,0.4)';
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(x + Math.cos(a) * r * 0.84, y + Math.sin(a) * r * 0.84, 2.2, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const plinth of decor.plinths) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(plinth.x + 4, plinth.y + 5, plinth.w, plinth.h);
+      ctx.fillStyle = '#5d5344';
+      ctx.fillRect(plinth.x, plinth.y, plinth.w, plinth.h);
+      ctx.fillStyle = '#71634e';
+      ctx.fillRect(plinth.x + 4, plinth.y + 4, plinth.w - 8, plinth.h - 8);
+      // An empty velvet cushion on top, waiting for a prize.
+      ctx.fillStyle = '#6e2430';
+      ctx.fillRect(plinth.x + 8, plinth.y + 8, plinth.w - 16, plinth.h - 16);
+      ctx.strokeStyle = 'rgba(201,162,74,0.75)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(plinth.x + 2, plinth.y + 2, plinth.w - 4, plinth.h - 4);
+    }
+    for (const plant of decor.plants) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.beginPath(); ctx.ellipse(plant.x, plant.y + 8, 17, 6, 0, 0, Math.PI * 2); ctx.fill();
+      // Terracotta pot with a brass rim, then layered foliage.
+      ctx.fillStyle = '#8a4a2a';
+      ctx.beginPath(); ctx.arc(plant.x, plant.y + 3, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#c9a24a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(plant.x, plant.y + 3, 10, 0, Math.PI * 2); ctx.stroke();
+      const leaves = [[0, -6, 11], [-8, -1, 8], [8, -2, 8], [-4, -11, 7], [5, -10, 7], [0, 1, 8]];
+      for (const [dx, dy, r] of leaves) {
+        ctx.fillStyle = '#2e6b3e';
+        ctx.beginPath(); ctx.arc(plant.x + dx, plant.y + dy, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(90,180,110,0.5)';
+        ctx.beginPath(); ctx.arc(plant.x + dx - 2, plant.y + dy - 2, r * 0.55, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    for (const rope of decor.ropes) {
+      // Two brass posts and the crimson rope sagging between them.
+      ctx.strokeStyle = '#7c2934';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(rope.x1, rope.y);
+      ctx.quadraticCurveTo((rope.x1 + rope.x2) / 2, rope.y + 13, rope.x2, rope.y);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,150,150,0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(rope.x1, rope.y - 1.5);
+      ctx.quadraticCurveTo((rope.x1 + rope.x2) / 2, rope.y + 11, rope.x2, rope.y - 1.5);
+      ctx.stroke();
+      for (const px of [rope.x1, rope.x2]) {
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath(); ctx.ellipse(px, rope.y + 7, 6, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#8a6a1e';
+        ctx.fillRect(px - 1.8, rope.y - 8, 3.6, 15);
+        ctx.fillStyle = '#ffd76a';
+        ctx.beginPath(); ctx.arc(px, rope.y - 10, 3.4, 0, Math.PI * 2); ctx.fill();
       }
     }
   }
@@ -479,15 +566,15 @@ export function createRenderer(canvas) {
     for (const item of state.loot) {
       if (item.taken) continue;
       const pulse = 0.75 + Math.sin(time * 3 + item.x) * 0.25;
-      const glow = ctx.createRadialGradient(item.x, item.y, 2, item.x, item.y, 46);
-      glow.addColorStop(0, `rgba(255,205,90,${0.5 * pulse})`);
+      const glow = ctx.createRadialGradient(item.x, item.y, 2, item.x, item.y, 54);
+      glow.addColorStop(0, `rgba(255,205,90,${0.62 * pulse})`);
       glow.addColorStop(1, 'rgba(255,205,90,0)');
       ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(item.x, item.y, 46, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(item.x, item.y, 54, 0, Math.PI * 2); ctx.fill();
       // A little gold plinth under the prize.
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.beginPath(); ctx.ellipse(item.x, item.y + 12, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
-      drawLootIcon(LOOT_ICONS[item.id] || 'idol', item.x, item.y, item.prime ? 1.5 : 1.15);
+      drawLootIcon(LOOT_ICONS[item.id] || 'idol', item.x, item.y, item.prime ? 1.65 : 1.3);
       // Named label, dark-backed so it reads over any floor.
       const label = item.prime ? `★ ${item.name} — $${item.value}` : `${item.name} — $${item.value}`;
       ctx.font = 'bold 13px Georgia, serif';
@@ -572,11 +659,11 @@ export function createRenderer(canvas) {
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath(); ctx.ellipse(camera.x, camera.y + 8, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#8a6a1e';
-    ctx.beginPath(); ctx.arc(camera.x, camera.y, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(camera.x, camera.y, 13.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#c9a24a';
-    ctx.beginPath(); ctx.arc(camera.x, camera.y, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(camera.x, camera.y, 10, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = blind ? '#555' : '#7fd4ff';
-    ctx.beginPath(); ctx.arc(camera.x, camera.y, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(camera.x, camera.y, 5.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(camera.x - 1.5, camera.y - 1.5, 1.5, 0, Math.PI * 2); ctx.fill();
     text(ctx, 'BRASS EYE', camera.x, camera.y - 18, 'bold 10px Georgia, serif', blind ? '#888' : '#9fdcff', 'center');
@@ -599,16 +686,25 @@ export function createRenderer(canvas) {
     const blockers = state.guards.length ? GALLERIES[state.gallery].blockers : [];
     for (const camera of state.cameras) {
       const points = conePolygon(camera.x, camera.y, camera.angle, CAMERA_RANGE, CAMERA_HALF_ANGLE, blockers);
-      drawCone(points, blind ? 'rgba(120,120,120,0.10)' : 'rgba(70,150,255,0.16)', blind ? 'rgba(150,150,150,0.35)' : 'rgba(120,190,255,0.55)');
+      drawCone(points, blind ? 'rgba(120,120,120,0.10)' : 'rgba(70,150,255,0.21)', blind ? 'rgba(150,150,150,0.35)' : 'rgba(120,190,255,0.6)');
     }
     for (const guard of state.guards) {
       const points = conePolygon(guard.x, guard.y, guard.angle, GUARD_RANGE, GUARD_HALF_ANGLE, blockers);
       const hot = guard.suspicion >= 0.75;
-      drawCone(points, blind ? 'rgba(120,120,120,0.10)' : hot ? 'rgba(255,80,40,0.22)' : 'rgba(245,176,65,0.17)', blind ? 'rgba(150,150,150,0.35)' : hot ? 'rgba(255,110,70,0.7)' : 'rgba(245,190,90,0.6)');
+      drawCone(points, blind ? 'rgba(120,120,120,0.10)' : hot ? 'rgba(255,80,40,0.28)' : 'rgba(245,176,65,0.22)', blind ? 'rgba(150,150,150,0.35)' : hot ? 'rgba(255,110,70,0.75)' : 'rgba(245,190,90,0.65)');
     }
   }
 
   function drawGuard(guard, time) {
+    ctx.save();
+    ctx.translate(guard.x, guard.y);
+    ctx.scale(ACTOR_SCALE, ACTOR_SCALE);
+    ctx.translate(-guard.x, -guard.y);
+    drawGuardFigure(guard, time);
+    ctx.restore();
+  }
+
+  function drawGuardFigure(guard, time) {
     const suspicious = guard.suspicion >= 0.35 && guard.suspicion < 0.75;
     const alert = guard.suspicion >= 0.75;
     const lured = guard.state === 'lured';
@@ -633,7 +729,7 @@ export function createRenderer(canvas) {
     ctx.translate(lx, ly + bob * 0.4);
     ctx.rotate(suspicious ? 0.12 : 0);
     // Long coat with collar and gold trim.
-    ctx.fillStyle = '#1d2436';
+    ctx.fillStyle = '#27324c';
     ctx.beginPath();
     ctx.moveTo(-9, -8); ctx.lineTo(9, -8); ctx.lineTo(12, 14); ctx.lineTo(-12, 14); ctx.closePath();
     ctx.fill();
@@ -666,7 +762,7 @@ export function createRenderer(canvas) {
     ctx.beginPath(); ctx.moveTo(12, 11); ctx.lineTo(14, 16); ctx.moveTo(12, 11); ctx.lineTo(10, 16); ctx.stroke();
     // Raised arm holding the brass lantern, with rim light on the coat edge.
     const armAngle = guard.angle - 0.9;
-    ctx.strokeStyle = '#1d2436';
+    ctx.strokeStyle = '#27324c';
     ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(6, -6); ctx.lineTo(6 + Math.cos(armAngle) * 14, -6 + Math.sin(armAngle) * 14); ctx.stroke();
     ctx.strokeStyle = 'rgba(255,205,120,0.7)';
@@ -722,6 +818,15 @@ export function createRenderer(canvas) {
   }
 
   function drawWren(player) {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.scale(ACTOR_SCALE, ACTOR_SCALE);
+    ctx.translate(-player.x, -player.y);
+    drawWrenFigure(player);
+    ctx.restore();
+  }
+
+  function drawWrenFigure(player) {
     const stride = player.moving ? Math.sin(player.x * 0.12 + player.y * 0.12) * 2 : 0;
     // Soft shadow.
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -731,7 +836,7 @@ export function createRenderer(canvas) {
     ctx.translate(player.x, player.y);
     // Layered cloak with a torn pointed hem trailing against her stride.
     const hemTrail = player.moving ? -Math.cos(player.angle) * 5 : 0;
-    ctx.fillStyle = '#232a3d';
+    ctx.fillStyle = '#2e3852';
     ctx.beginPath();
     ctx.moveTo(-8, -10);
     ctx.lineTo(8, -10);
@@ -761,7 +866,7 @@ export function createRenderer(canvas) {
     ctx.beginPath(); ctx.arc(-9, 2 + stride * 0.3, 3, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(9, 2 - stride * 0.3, 3, 0, Math.PI * 2); ctx.fill();
     // Deep hood with fold creases, shadowed face, black domino mask, two pale eyes.
-    ctx.fillStyle = '#1a2030';
+    ctx.fillStyle = '#232e47';
     ctx.beginPath(); ctx.arc(0, -14, 9, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,0.9)';
     ctx.lineWidth = 1.5;
@@ -1046,6 +1151,7 @@ export function createRenderer(canvas) {
     drawEntryTrail();
     drawPatrols(state);
     drawFurniture(def);
+    drawDecor(def);
     drawLoot(state, state.time);
     drawCoinsThrown(state);
     drawCones(state);

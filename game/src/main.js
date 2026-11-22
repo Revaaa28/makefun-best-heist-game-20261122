@@ -2,7 +2,7 @@
 // 1/60 s steps, and the renderer paints what is there. The game moves between
 // five screens: title, play, paused, caught and getaway.
 //
-// ?seed=N fixes the world. ?shot=cover|title|getaway|caught (with &seed=N)
+// ?seed=N fixes the world. ?shot=cover|hall|vault|caught (with &seed=N)
 // stages that scene instead of running the loop, paints it twice and sets
 // window.__shotReady for a screenshot. window.__heist exposes the live world
 // for playtesting (state, step, reset).
