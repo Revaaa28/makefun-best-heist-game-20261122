@@ -48,6 +48,14 @@ export const COIN_COST = 200;
 export const COIN_LURE_RADIUS = 430;
 export const SMOKE_COUNT = 2;
 export const SMOKE_SECONDS = 4;
+export const EMP_COUNT = 2;
+export const EMP_COST = 300;
+export const EMP_SECONDS = 5;
+
+// Laser gates: timed beams across one chokepoint per gallery. Crossing a
+// LIVE beam trips it: a slab of alarm and the hall knows. Staff badges key
+// the wardens and cameras out — only Wren trips a beam.
+export const LASER_ALARM = 40;
 
 // Bonuses paid at each green door.
 export const GHOST_BONUS = 300;
@@ -120,6 +128,19 @@ export const GALLERIES = [
       [{ x: 400, y: 480 }, { x: 880, y: 480 }, { x: 880, y: 580 }, { x: 400, y: 580 }],
       [{ x: 1000, y: 200 }, { x: 1150, y: 380 }, { x: 1000, y: 560 }, { x: 880, y: 380 }],
     ],
+    names: ['BRAM', 'SELENE', 'KASPER'],
+    // One beam across the carpet junction, south of the idol: the direct
+    // approach is timed, the aisles are not.
+    lasers: [
+      { x1: 540, y1: 430, x2: 740, y2: 430, period: 3.8, onTime: 2.4, phase: 0 },
+    ],
+    // The three ways through, drawn by the route overlay (Tab): the carpet,
+    // the shadow west, the east aisle. Every point is real walkable floor.
+    routePaths: [
+      { id: 'A', label: 'CARPET', color: '#ffd76a', labelAt: [640, 622], points: [[165, 690], [305, 585], [640, 585], [640, 470], [640, 330], [900, 380], [1214, 380]] },
+      { id: 'B', label: 'SHADOW WEST', color: '#7fb2ff', labelAt: [150, 432], points: [[165, 690], [150, 530], [150, 320], [315, 296], [520, 302], [900, 380], [1214, 380]] },
+      { id: 'C', label: 'EAST AISLE', color: '#7ae08a', labelAt: [800, 622], points: [[165, 690], [500, 648], [965, 330], [1000, 380], [1214, 380]] },
+    ],
   },
   {
     name: 'THE CLOCKWORK HALL',
@@ -172,6 +193,16 @@ export const GALLERIES = [
       [{ x: 300, y: 420 }, { x: 520, y: 420 }, { x: 520, y: 620 }, { x: 300, y: 620 }],
       [{ x: 980, y: 180 }, { x: 1140, y: 380 }, { x: 980, y: 600 }, { x: 830, y: 380 }],
     ],
+    names: ['DORIAN', 'MIRA', 'ANSEL'],
+    // A vertical beam down the west aisle, guarding the gear-train approach.
+    lasers: [
+      { x1: 455, y1: 300, x2: 455, y2: 580, period: 3.8, onTime: 2.4, phase: 1.3 },
+    ],
+    routePaths: [
+      { id: 'A', label: 'CARPET', color: '#ffd76a', labelAt: [640, 622], points: [[165, 690], [305, 585], [640, 585], [640, 470], [640, 330], [900, 380], [1214, 380]] },
+      { id: 'B', label: 'SHADOW EAST', color: '#7fb2ff', labelAt: [1099, 508], points: [[165, 690], [600, 668], [1099, 570], [1099, 450], [950, 318], [760, 296], [1000, 380], [1214, 380]] },
+      { id: 'C', label: 'WEST AISLE', color: '#7ae08a', labelAt: [330, 388], points: [[165, 690], [300, 590], [330, 320], [480, 262], [640, 296], [1000, 380], [1214, 380]] },
+    ],
   },
   {
     name: 'THE MANUSCRIPT VAULT',
@@ -221,6 +252,17 @@ export const GALLERIES = [
       [{ x: 640, y: 150 }, { x: 830, y: 250 }, { x: 640, y: 350 }, { x: 450, y: 250 }],
       [{ x: 280, y: 480 }, { x: 640, y: 600 }, { x: 1000, y: 480 }, { x: 640, y: 420 }],
       [{ x: 1000, y: 180 }, { x: 1140, y: 380 }, { x: 1000, y: 560 }, { x: 880, y: 380 }],
+    ],
+    names: ['CORIN', 'TALIA', 'RUPERT'],
+    // A long beam across the south aisle: the codex approach from the south
+    // is timed; the north shadow and the shelves are not.
+    lasers: [
+      { x1: 420, y1: 440, x2: 860, y2: 440, period: 3.8, onTime: 2.4, phase: 2.2 },
+    ],
+    routePaths: [
+      { id: 'A', label: 'CARPET', color: '#ffd76a', labelAt: [640, 622], points: [[165, 690], [305, 585], [640, 585], [640, 470], [640, 330], [900, 380], [1214, 380]] },
+      { id: 'B', label: 'SHADOW NORTH', color: '#7fb2ff', labelAt: [330, 150], points: [[165, 690], [150, 400], [146, 200], [360, 160], [640, 240], [900, 380], [1214, 380]] },
+      { id: 'C', label: 'SOUTH AISLE', color: '#7ae08a', labelAt: [700, 614], points: [[165, 690], [500, 640], [920, 420], [1000, 380], [1214, 380]] },
     ],
   },
 ];

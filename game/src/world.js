@@ -5,14 +5,17 @@
 import {
   ALARM_ALARM_AT, ALARM_CAMERA_RATE, ALARM_CHASE_RATE, ALARM_DECAY,
   ALARM_SUSPICIOUS_AT, ALARM_SUSPICIOUS_RATE, CAMERA_HALF_ANGLE, CAMERA_RANGE,
-  CHASE_AT, COIN_COST, COIN_COUNT, COIN_LURE_RADIUS, ENTRY, EXIT, GALLERIES,
+  CHASE_AT, COIN_COST, COIN_COUNT, COIN_LURE_RADIUS, EMP_COST, EMP_COUNT,
+  EMP_SECONDS, ENTRY, EXIT, GALLERIES,
   GHOST_BONUS, GUARD_CHASE_SPEED, GUARD_HALF_ANGLE, GUARD_RANGE, GUARD_SPEED,
+  LASER_ALARM,
   LOOT_RADIUS, PLAYER_RADIUS, PLAYER_SNEAK_SPEED, PLAYER_SPEED, PLAYER_START,
   ROOM, SMOKE_COUNT, SMOKE_SECONDS, SNEAK_SIGHT_FACTOR, SHADOW_RANGE_FACTOR,
   STEP, SUSPICIOUS_AT, SUSPICION_DECAY, SUSPICION_FILL_CLOSE, SUSPICION_FILL_FAR,
   SUSPICION_FILL_MID, TIME_BONUS_PER_SECOND, TIME_BONUS_WINDOW, WALL,
 } from './config.js';
 import { canSee, pointInRect } from './vision.js';
+import { buildLasers, crossedLiveLaser } from './laser-grid.js';
 
 export const EVENT_CAUGHT = 1;
 export const EVENT_GALLERY = 2;
@@ -47,6 +50,10 @@ export function createWorld(random) {
     coins: COIN_COUNT,
     smoke: SMOKE_COUNT,
     smokeTimer: 0,
+    emp: EMP_COUNT,
+    empTimer: 0,
+    lasers: [],
+    showRoutes: false,
     alarm: 0,
     alarmPeak: 0,
     time: 0,
@@ -65,6 +72,8 @@ export function createWorld(random) {
     floaters: [],
     banner: '',
     bannerT: 0,
+    caption: '',
+    captionT: 0,
     summaries: [],
     totals: null,
     seenCount: 0,
@@ -89,11 +98,17 @@ export function createWorld(random) {
     state.alarmPeak = 0;
     state.galleryTime = 0;
     state.smokeTimer = 0;
+    state.empTimer = 0;
+    state.lasers = buildLasers(def);
     state.coinsThrown = [];
     state.callouts = [];
     state.floaters = [];
     state.banner = '';
     state.bannerT = 0;
+    // A location caption names the room as Wren enters it; it fades in play
+    // and the screenshot scenes hold it open.
+    state.caption = `HEIST ${index + 1} OF 3 — ${def.name}`;
+    state.captionT = 3.5;
     state.player.x = PLAYER_START.x;
     state.player.y = PLAYER_START.y;
     state.player.angle = -Math.PI / 2;
@@ -104,6 +119,7 @@ export function createWorld(random) {
       const start = path[0];
       return {
         id: i + 1,
+        name: def.names[i],
         path,
         wp: 1,
         x: start.x,
@@ -255,6 +271,19 @@ export function createWorld(random) {
     return 0;
   }
 
+  // The EMP "Brass Blind": a priced pulse that kills every Brass Eye and
+  // laser gate for EMP_SECONDS. Wardens are flesh and blood — it does
+  // nothing to them.
+  function useEmp() {
+    if (state.emp <= 0 || state.empTimer > 0) return 0;
+    state.emp -= 1;
+    state.score -= EMP_COST;
+    state.empTimer = EMP_SECONDS;
+    setBanner('EMP — EYES AND LASERS DARK', 2.5);
+    if (audio) audio.emp();
+    return 0;
+  }
+
   function finishGallery() {
     const ghost = state.alarmPeak < ALARM_ALARM_AT;
     const timeBonus = Math.max(0, Math.round((TIME_BONUS_WINDOW - state.galleryTime) * TIME_BONUS_PER_SECOND));
@@ -284,6 +313,7 @@ export function createWorld(random) {
         time: Math.round(state.time),
         coinsLeft: state.coins,
         smokeLeft: state.smoke,
+        empLeft: state.emp,
         galleries: state.summaries.slice(),
       };
       if (audio) audio.getaway();
@@ -434,7 +464,7 @@ export function createWorld(random) {
   function stepCamera(camera, dt) {
     camera.angle = camera.base + Math.sin(state.time * camera.speed + camera.phase) * camera.sweep;
     camera.spotted = false;
-    if (state.smokeTimer > 0) return;
+    if (state.smokeTimer > 0 || state.empTimer > 0) return;
     const player = state.player;
     const range = watcherRange(CAMERA_RANGE);
     if (canSee(camera.x, camera.y, camera.angle, range, CAMERA_HALF_ANGLE, player.x, player.y, sightBlockers())) {
@@ -445,15 +475,21 @@ export function createWorld(random) {
 
   /**
    * Advance the world one fixed step. `move` is {x,y} (normalised), `sneak` a
-   * boolean, and lift/coin/smoke are edge-triggered flags for this step.
+   * boolean, and lift/coin/smoke/emp are edge-triggered flags for this step.
    * Returns an event bitmask (EVENT_*).
    */
-  function step(dt, move, sneak, lift, coin, smoke) {
+  function step(dt, move, sneak, lift, coin, smoke, emp) {
     if (state.caught || state.getaway) return 0;
     state.time += dt;
     state.galleryTime += dt;
     if (state.smokeTimer > 0) state.smokeTimer = Math.max(0, state.smokeTimer - dt);
+    if (state.empTimer > 0) state.empTimer = Math.max(0, state.empTimer - dt);
     if (state.bannerT > 0) state.bannerT -= dt;
+    if (state.captionT > 0) state.captionT -= dt;
+    for (const laser of state.lasers) {
+      if (laser.coolT > 0) laser.coolT -= dt;
+      if (laser.flashT > 0) laser.flashT -= dt;
+    }
     for (const callout of state.callouts) callout.ttl -= dt;
     state.callouts = state.callouts.filter((c) => c.ttl > 0);
     for (const floater of state.floaters) { floater.ttl -= dt; floater.y -= 22 * dt; }
@@ -465,15 +501,27 @@ export function createWorld(random) {
     const speed = sneak ? PLAYER_SNEAK_SPEED : PLAYER_SPEED;
     player.sneaking = sneak;
     player.moving = move.x !== 0 || move.y !== 0;
+    const stepFromX = player.x;
+    const stepFromY = player.y;
     if (player.moving) {
       player.angle = Math.atan2(move.y, move.x);
       moveCircle(player, move.x * speed * dt, move.y * speed * dt, PLAYER_RADIUS);
+      // Laser gates: a LIVE beam crossed mid-step trips it, once per crossing.
+      const tripped = crossedLiveLaser(state.lasers, stepFromX, stepFromY, player.x, player.y, state.time, state.empTimer);
+      if (tripped) {
+        tripped.coolT = 1.2;
+        tripped.flashT = 0.8;
+        state.alarm = Math.min(100, state.alarm + LASER_ALARM);
+        setBanner('LASER TRIPPED — THE HALL KNOWS', 2.5);
+        if (audio) audio.laser();
+      }
     }
 
     let events = 0;
     if (lift) events |= liftLoot();
     if (coin) events |= throwCoin();
     if (smoke) events |= useSmoke();
+    if (emp) events |= useEmp();
 
     let anyoneSees = false;
     for (const guard of state.guards) {
@@ -507,6 +555,8 @@ export function createWorld(random) {
     state.purse = 0;
     state.coins = COIN_COUNT;
     state.smoke = SMOKE_COUNT;
+    state.emp = EMP_COUNT;
+    state.showRoutes = false;
     state.time = 0;
     state.caught = false;
     state.caughtReason = '';

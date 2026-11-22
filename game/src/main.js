@@ -9,7 +9,7 @@
 import { BEST_KEY, STEP } from './config.js';
 import { createRandom } from './random.js';
 import { createWorld, EVENT_CAUGHT, EVENT_GALLERY, EVENT_GETAWAY } from './world.js';
-import { ACTION_CONFIRM, ACTION_MUTE, ACTION_PAUSE, ACTION_RESTART, createInput } from './input.js';
+import { ACTION_CONFIRM, ACTION_MUTE, ACTION_PAUSE, ACTION_RESTART, ACTION_ROUTES, createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createRenderer, SCREEN_CAUGHT, SCREEN_GETAWAY, SCREEN_PAUSED, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
 import { stageShot } from './shots.js';
@@ -51,7 +51,7 @@ function runShot(name) {
   const scene = stageShot(name, world);
   let painted = 0;
   function paint() {
-    renderer.draw(world.state, scene.screen, { best: scene.best, nearest: null });
+    renderer.draw(world.state, scene.screen, { best: scene.best, nearest: null, legend: scene.legend !== false });
     painted += 1;
     if (painted < 2) requestAnimationFrame(paint);
     else window.__shotReady = true;
@@ -107,6 +107,7 @@ function runGame() {
       input.wasPressed('KeyE'),
       input.wasPressed('KeyC'),
       input.wasPressed('KeyX'),
+      input.wasPressed('KeyQ'),
     );
     if (events & EVENT_CAUGHT) endCaught();
     else if (events & EVENT_GETAWAY) endGetaway();
@@ -120,6 +121,10 @@ function runGame() {
     if (actions & ACTION_MUTE) {
       const muted = audio.toggleMute();
       announce(muted ? 'Sound off.' : 'Sound on.');
+    }
+    if (actions & ACTION_ROUTES && screen === SCREEN_PLAY) {
+      world.state.showRoutes = !world.state.showRoutes;
+      announce(world.state.showRoutes ? 'Route overlay on: the three ways through, drawn on the floor.' : 'Route overlay off.');
     }
     if (actions & ACTION_RESTART && (screen === SCREEN_PLAY || screen === SCREEN_PAUSED || screen === SCREEN_CAUGHT || screen === SCREEN_GETAWAY)) {
       startGame();

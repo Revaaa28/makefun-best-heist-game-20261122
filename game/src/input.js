@@ -1,11 +1,13 @@
 // Keyboard and mouse: WASD/arrows to move, Shift to sneak, E to lift loot,
-// C to toss a coin decoy, X for a smoke vial, P to pause, Space/Enter to confirm,
-// R to restart, M to mute. Clicking the floor sets a walk target (mouse play).
+// C to toss a coin decoy, X for a smoke vial, Q for an EMP pulse, Tab toggles
+// the route overlay, P to pause, Space/Enter to confirm, R to restart,
+// M to mute. Clicking the floor sets a walk target (mouse play).
 
 export const ACTION_CONFIRM = 1;
 export const ACTION_PAUSE = 2;
 export const ACTION_RESTART = 4;
 export const ACTION_MUTE = 8;
+export const ACTION_ROUTES = 16;
 
 const MOVE_KEYS = {
   ArrowUp: [0, -1], KeyW: [0, -1],
@@ -30,7 +32,8 @@ export function createInput(canvas) {
     if (event.code === 'KeyP') actions |= ACTION_PAUSE;
     if (event.code === 'KeyR') actions |= ACTION_RESTART;
     if (event.code === 'KeyM') actions |= ACTION_MUTE;
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) {
+    if (event.code === 'Tab') actions |= ACTION_ROUTES;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(event.code)) {
       event.preventDefault();
     }
   }

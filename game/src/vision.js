@@ -61,6 +61,20 @@ export function segmentBlocked(x1, y1, x2, y2, blockers) {
   return false;
 }
 
+/**
+ * True when segment (x1,y1)-(x2,y2) crosses or touches segment (x3,y3)-(x4,y4).
+ * Used by the laser gates: Wren's step path against a beam line. Touching
+ * counts — a step that lands exactly on the beam line still breaks it.
+ */
+export function segmentsCross(x1, y1, x2, y2, x3, y3, x4, y4) {
+  const d1 = (x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3);
+  const d2 = (x4 - x3) * (y2 - y3) - (y4 - y3) * (x2 - x3);
+  const d3 = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+  const d4 = (x2 - x1) * (y4 - y1) - (y2 - y1) * (x4 - x1);
+  const straddle = (a, b) => (a > 0 && b < 0) || (a < 0 && b > 0) || a === 0 || b === 0;
+  return straddle(d1, d2) && straddle(d3, d4);
+}
+
 const CONE_RAYS = 26;
 
 /**

@@ -74,6 +74,8 @@ export function createAudio() {
     door() { tone(392, 0.16, 'sine', 0.1); tone(587, 0.34, 'sine', 0.12, 0.13); },
     coin() { tone(1568, 0.07, 'square', 0.05); tone(2093, 0.1, 'square', 0.04, 0.06); },
     smoke() { hiss(0.5); },
+    emp() { tone(1200, 0.3, 'sawtooth', 0.05); tone(300, 0.45, 'sawtooth', 0.06, 0.08); tone(90, 0.5, 'square', 0.05, 0.16); },
+    laser() { tone(880, 0.14, 'square', 0.08); tone(880, 0.14, 'square', 0.08, 0.18); tone(1174, 0.3, 'square', 0.08, 0.36); },
     suspicious() { tone(440, 0.16, 'triangle', 0.08); tone(466, 0.16, 'triangle', 0.08, 0.14); },
     chase() { tone(311, 0.12, 'square', 0.07); tone(311, 0.12, 'square', 0.07, 0.15); tone(370, 0.2, 'square', 0.07, 0.3); },
     caught() { tone(233, 0.25, 'sawtooth', 0.1); tone(175, 0.25, 'sawtooth', 0.1, 0.2); tone(117, 0.6, 'sawtooth', 0.12, 0.4); },
